@@ -2,6 +2,10 @@ import numpy as np
 import time
 import os
 
+delta_t = 0.01
+G = 100
+
+
 class Body():
     def __init__(self, mass, radius, position, velocity, star=False):
         self.mass = mass
@@ -27,6 +31,22 @@ class Body():
 
         self.points = (m @ circle).transpose(0,2,1).reshape(-1,3)
 
+    def move(self, bodies):
+        for body in bodies:
+            # calculate gravitational force
+            F = G * self.mass * body.mass \
+                / np.linalg.norm(self.position - body.position) ** 2
+
+            # update velocity
+            delta_v = F * delta_t
+            self.velocity = self.velocity + delta_v
+
+        # update position
+        delta_position = self.velocity * delta_t
+        self.position = self.position + delta_position
+        self.points = self.points + delta_position
+
+
     def rotation_matrix(self, theta):
         c = np.cos(theta)
         s = np.sin(theta)
@@ -43,7 +63,6 @@ class Body():
             self.shading = np.ones(self.points.shape[0])
         else:
             light_direction = self.position - star_position
-            light_direction = light_direction / np.linalg.norm(light_direction)
             self.shading = -(self.normals @ light_direction)
 
 class Camera():
@@ -93,15 +112,13 @@ class Camera():
         return np.flip(screen.T, axis=0)
 
 c = Camera(position=np.array([-10, 0, 6]), focus=np.array([0,0,0]), screen_distance=1)
-sun = Body(1,2,np.array([0,0,0]), np.array([0,0,0]), star=True)
-earth = Body(1,1, np.array([-7,0,0]), np.array([0,0,0]))
+sun = Body(1,1,np.array([0,0,0]), np.array([0,0,0]), star=True)
+earth = Body(1,0.5, np.array([-7,0,0]), np.array([0,1,0]))
 
 
 
 while(True):
-    earth.position = earth.position @ earth.rotation_matrix([0.1])[0]
-    earth.points = earth.points @ earth.rotation_matrix([0.1])[0]
-    earth.normals = earth.normals @ earth.rotation_matrix([0.1])[0]
+    earth.move([sun])
 
     sun.shade()
     earth.shade(sun.position)
