@@ -101,7 +101,7 @@ while(True):
     for x, y, shade in zip(digital_lr[order], digital_tb[order], digital_shading[order]):
         screen[x,y] = greyscale[shade]
 
-    os.system('clear')
+    os.system('cls')
 
     # print to terminal
     for row in np.flip(screen.T, axis=0):
