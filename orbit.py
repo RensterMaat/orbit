@@ -3,7 +3,7 @@ import time
 import os
 
 delta_t = 0.01
-G = 100
+G = 25
 
 
 class Body():
@@ -34,8 +34,8 @@ class Body():
     def move(self, bodies):
         for body in bodies:
             # calculate gravitational force
-            F = G * self.mass * body.mass \
-                / np.linalg.norm(self.position - body.position) ** 2
+            F = -G * self.mass * body.mass * (self.position - body.position) \
+                / np.linalg.norm(self.position - body.position) ** 3
 
             # update velocity
             delta_v = F * delta_t
@@ -107,28 +107,33 @@ class Camera():
 
         # fill the screen
         for x, y, shade in zip(digital_lr[order], digital_tb[order], digital_shading[order]):
-            screen[x,y] = self.greyscale[shade]
+            if not (x < 0 or x >= screen.shape[0] or y < 0 or y >= screen.shape[1]):
+                screen[x,y] = self.greyscale[shade]
 
         return np.flip(screen.T, axis=0)
 
-c = Camera(position=np.array([-10, 0, 6]), focus=np.array([0,0,0]), screen_distance=1)
-sun = Body(1,1,np.array([0,0,0]), np.array([0,0,0]), star=True)
-earth = Body(1,0.5, np.array([-7,0,0]), np.array([0,1,0]))
+c = Camera(position=np.array([0, -20, 5]), focus=np.array([0,0,0]), screen_distance=1)
+
+sun = Body(100,2,np.array([0,0,0]), np.array([0,0,0]), star=True)
+earth = Body(1,0.5, np.array([-7,0,0]), np.array([0,22,0]))
+jupyter = Body(5,1, np.array([20,0,0]), np.array([0,-23,0]))
+
 
 
 
 while(True):
-    earth.move([sun])
+    earth.move([sun, jupyter])
+    jupyter.move([sun, earth])
 
     sun.shade()
     earth.shade(sun.position)
-    
+    jupyter.shade(sun.position)
     
 
-    screen = c.project([sun, earth])
+    screen = c.project([sun, earth, jupyter])
 
-    os.system('clear')
+    os.system('cls')
     for row in screen:
         print(''.join(row))
 
-    time.sleep(0.01)
+    time.sleep(0.001)
